@@ -2,13 +2,9 @@ import random
 from settings import settings
 
 
-command_prefix = settings["command_prefix"]
-
-users = []
-
-
 class User:
     def __init__(self, name):
+        self.id = random.choice(range(1_000_000, 9_999_999))
         self.name = name
         self.used_words = []
         self.score = 0
@@ -24,6 +20,71 @@ class User:
             self.score -= 1
 
 
+class Users:
+    def __init__(self, names=[]):
+        self.users = [User(name) for name in names]
+
+        self.current_user_index = random.choice(range(self.user_count))
+        self.current_user = self.users[self.current_user_index]
+
+    def add_user(self, name):
+        self.users.append(User(name))
+
+    def kill_user(self, user):
+        for current_user in self.users:
+
+            if user.id == current_user.id:
+                current_user.is_alive = False
+                self.rotate_forward()
+
+                break
+
+    def rotate_forward(self):
+        if self.current_user_index == self.user_count - 1:
+            self.current_user_index = 0
+
+        else:
+            self.current_user_index += 1
+
+        self.current_user = self.users[self.current_user_index]
+
+        if not self.current_user.is_alive:
+            self.rotate_forward()
+
+    def rotate_backward(self):
+        if self.current_user_index == 0:
+            self.current_user_index = self.user_count - 1
+
+        else:
+            self.current_user_index -= 1
+
+        self.current_user = self.users[self.current_user_index]
+
+        if not self.current_user.is_alive:
+            self.rotate_backward()
+
+    @property
+    def only_one_alive(self):
+        alive_users = 0
+
+        for user in self.users:
+            if user.is_alive:
+                alive_users += 1
+
+                if alive_users > 1:
+                    return False
+
+        return True
+
+    @property
+    def user_count(self):
+        return len(self.users)
+
+    @property
+    def previous_user(self):
+        return self.users[-1]
+
+
 while True:
 
     print("Who are playing this game?")
@@ -32,7 +93,7 @@ while True:
     usernames_input = input(":: ").strip().split(', ')
 
     user_count = len(usernames_input)
-    last_user, second_to_last_user = user_count - 1, user_count - 2
+    previous_user, second_to_last_user = user_count - 1, user_count - 2
 
     usernames = ""
     for i in range(user_count):
@@ -41,7 +102,7 @@ while True:
         if i == second_to_last_user:
             usernames += username + " and "
 
-        elif i == last_user:
+        elif i == previous_user:
             usernames += username
 
         else:
@@ -54,83 +115,117 @@ while True:
     user_confirmation_input = input(":: ").strip().lower()
 
     if user_confirmation_input == "y":
-        for user in usernames_input:
-            users.append(User(user))
+        users = Users(usernames_input)
 
         break
 
 
-initial_word = settings["initial_word"]
-used_words = [
-    {
-        "word": initial_word,
-        "author": "base"
-    }
-]
-used_words_ref = []
+class Word:
+    def __init__(self, word, user):
+        self.word = word
+        self.last_letter = word[-1]
+        self.user = user
 
-user_count = len(users)
-current_user_index = random.choice(range(user_count))
+
+class Words:
+    def __init__(self, settings):
+        self.used_words = []
+        self.used_words_ref = []
+
+        initial_word = settings.initial_word
+        self.used_words.append(Word(initial_word, User("base")))
+        self.used_words_ref.append(initial_word)
+
+    def add_word(self, word, user):
+        created_word = Word(word, user)
+
+        self.used_words.append(created_word)
+        self.used_words_ref.append(word)
+
+        user.add_word(created_word)
+
+    def remove_word(self):
+        removed_word = self.used_words.pop()
+        self.used_words_ref.pop()
+
+        return removed_word
+
+    def is_used(self, word):
+        return word in self.used_words_ref
+
+    @property
+    def last_word(self):
+        return self.used_words[-1]
+
+    @property
+    def can_revert(self):
+        if len(self.used_words_ref) > 1:
+            return True
+        else:
+            return False
+
+
+class Command:
+    def __init__(self, string, command_prefix):
+        self.is_command = string.startswith(command_prefix)
+
+        if self.is_command:
+            self.action = string[string.index(command_prefix) + 1:]
+        else:
+            self.action = None
+
+
+words = Words(settings)
+
+initial_word = settings.initial_word
+used_words = words.used_words
+used_words_ref = words.used_words_ref
+
+user_count = users.user_count
 
 
 while True:
+    current_user = users.current_user
 
-    current_user = users[current_user_index]
+    if users.only_one_alive:
+        print(f"Congratulations! {current_user.name} has won the game.")
+        break
 
-    if not current_user.is_alive:
-        if current_user_index == user_count - 1:
-            current_user_index = 0
+    last_word = words.last_word.word
+    last_letter = words.last_word.last_letter
 
-        else:
-            current_user_index += 1
-
-        continue
-
-    last_word = used_words[-1]["word"]
-    last_letter = last_word[-1]
-
-    print(f"`{last_word}` was the previously used word.")
+    print(f"`{last_word}` was the previously used word by {words.last_word.user.name}.")
     print(f"Your word should start with `{last_letter}`.")
 
     user_word_input = input(f"[{current_user.name}] :: ").strip().lower()
 
-    if user_word_input.startswith(command_prefix):
-        command = user_word_input[user_word_input.index(command_prefix) + 1:]
+    command_prefix = settings.command_prefix
+    command = Command(user_word_input, command_prefix)
 
-        if command == "quit":
+    if command.is_command:
+
+        if command.action == "quit":
             print("Thanks for playing.")
 
             break
 
-        elif command == "revert":
-            if len(used_words_ref) > 1:
-                if current_user_index == 0:
-                    current_user_index = user_count - 1
+        elif command.action == "revert":
+            if words.can_revert:
+                users.rotate_backward()
 
-                else:
-                    current_user_index -= 1
+                removed_word = words.remove_word()
 
-                used_words.pop()
-                removed_word = used_words_ref.pop()
-
-                previous_user = users[current_user_index]
-                previous_user.remove_word()
-
-                print(f"`{removed_word['word']}` has been removed.")
+                print(
+                    f"`{removed_word.word}` entered by {removed_word.user.name} has been removed."
+                )
 
             else:
                 print(f"Already at the base word.")
 
             continue
 
-        elif command == "kill":
-            if current_user_index == user_count - 1:
-                current_user_index = 0
-
-            else:
-                current_user_index += 1
-
-            current_user.is_alive = False
+        elif command.action == "kill":
+            users.kill_user(current_user)
 
             print(f"{current_user.name} was killed.")
 
@@ -138,7 +233,7 @@ while True:
 
         continue
 
-    if user_word_input in used_words_ref:
+    if words.is_used(user_word_input):
         print(f"{user_word_input} has already been used.")
 
         continue
@@ -148,21 +243,11 @@ while True:
 
         continue
 
-    used_words.append({
-        "word": user_word_input,
-        "author": current_user.name
-    })
-    used_words_ref.append(user_word_input)
+    words.add_word(user_word_input, current_user)
 
-    current_user.add_word(user_word_input)
+    users.rotate_forward()
 
-    if current_user_index == user_count - 1:
-        current_user_index = 0
-
-    else:
-        current_user_index += 1
-
-for user in users:
+for user in users.users:
     name = user.name
     score = user.score
 
