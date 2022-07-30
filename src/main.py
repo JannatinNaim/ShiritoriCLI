@@ -4,19 +4,23 @@ from command import Command
 from settings import settings
 
 
+users: _user.Users = _user.Users()
+words: _word.Words = _word.Words()
+
 while True:
 
     print("Who are playing this game?")
     print("Provide comma separated names i.e name, other name, some name.")
 
-    usernames_input = input(":: ").strip().split(', ')
+    usernames_input: str = input(":: ").strip().split(', ')
 
-    user_count = len(usernames_input)
-    previous_user, second_to_last_user = user_count - 1, user_count - 2
+    user_count: int = len(usernames_input)
+    previous_user: int = user_count - 1
+    second_to_last_user: int = user_count - 2
 
-    usernames = ""
+    usernames: str = ""
     for i in range(user_count):
-        username = usernames_input[i]
+        username: str = usernames_input[i]
 
         if i == second_to_last_user:
             usernames += username + " and "
@@ -31,21 +35,13 @@ while True:
     print("Y/N to continue.")
     print(usernames)
 
-    user_confirmation_input = input(":: ").strip().lower()
+    user_confirmation_input: str = input(":: ").strip().lower()
 
     if user_confirmation_input == "y":
-        users = _user.Users(usernames_input)
+        for user in usernames_input:
+            users.add_user(user)
 
         break
-
-
-words = _word.Words(settings)
-
-initial_word = settings.initial_word
-used_words = words.used_words
-used_words_ref = words.used_words_ref
-
-user_count = users.user_count
 
 
 while True:

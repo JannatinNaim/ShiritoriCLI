@@ -23,8 +23,8 @@ class User:
 
 
 class Users:
-    def __init__(self, names: List[str] = []):
-        self.users: List[User] = [User(name) for name in names]
+    def __init__(self):
+        self.users: List[User] = []
 
         self.current_user_index: int = random.choice(range(self.user_count))
         self.current_user: User = self.users[self.current_user_index]
