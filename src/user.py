@@ -1,22 +1,20 @@
+from __future__ import annotations
 import random
 from typing import List
-from word import Word
+import word as _word
 
 
 class User:
     def __init__(self, name: str) -> None:
         self.id: int = random.choice(range(1_000_000, 9_999_999))
         self.name: str = name
-        self.used_words: List[Word] = []
+        self.used_words: List[_word.Word] = []
         self.score: int = 0
         self.is_alive: bool = True
 
-    def add_word(self, word) -> Word:
-        created_word = Word(word, self)
-        self.used_words.append(created_word)
+    def add_word(self, word):
+        self.used_words.append(word)
         self.score += 1
-
-        return created_word
 
     def remove_word(self):
         if len(self.used_words):

@@ -1,5 +1,5 @@
-from word import Words
-from user import Users
+import word as _word
+import user as _user
 from command import Command
 from settings import settings
 
@@ -34,12 +34,12 @@ while True:
     user_confirmation_input = input(":: ").strip().lower()
 
     if user_confirmation_input == "y":
-        users = Users(usernames_input)
+        users = _user.Users(usernames_input)
 
         break
 
 
-words = Words(settings)
+words = _word.Words(settings)
 
 initial_word = settings.initial_word
 used_words = words.used_words

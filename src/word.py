@@ -1,13 +1,14 @@
+from __future__ import annotations
 from typing import List
 from settings import Settings
-from user import User
+import user as _user
 
 
 class Word:
-    def __init__(self, word: str, user: User):
+    def __init__(self, word: str, user: _user.User):
         self.word: str = word
         self.last_letter: str = word[-1]
-        self.user: User = user
+        self.user: _user.User = user
 
 
 class Words:
@@ -16,10 +17,10 @@ class Words:
         self.used_words_ref: List[str] = []
 
         initial_word = settings.initial_word
-        self.used_words.append(Word(initial_word, User("base")))
+        self.used_words.append(Word(initial_word, _user.User("base")))
         self.used_words_ref.append(initial_word)
 
-    def add_word(self, word: str, user: User):
+    def add_word(self, word: str, user: _user.User):
         created_word = Word(word, user)
 
         self.used_words.append(created_word)
