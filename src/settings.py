@@ -3,8 +3,8 @@
 class Settings:
     def __init__(
         self,
-        initial_word,
-        command_prefix
+        initial_word: str,
+        command_prefix: str
     ):
         self.initial_word = initial_word
         self.command_prefix = command_prefix
