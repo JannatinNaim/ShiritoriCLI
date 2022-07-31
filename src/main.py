@@ -121,3 +121,20 @@ for user in users.users:
     score = user.score
 
     print(f"{name} scored {score} points.")
+
+
+with open("./game_data.json", "w", encoding="utf-8") as file:
+    data = {
+        "users": [
+            {
+                "name": user.name,
+                "words": [
+                    word.word
+                    for word in user.used_words
+                ],
+                "score": user.score
+            }
+            for user in users.users
+        ]
+    }
+    json.dump(data, file)
