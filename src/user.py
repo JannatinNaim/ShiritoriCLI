@@ -26,11 +26,14 @@ class Users:
     def __init__(self):
         self.users: List[User] = []
 
-        self.current_user_index: int = random.choice(range(self.user_count))
-        self.current_user: User = self.users[self.current_user_index]
+        self.current_user_index = None
+        self.current_user = None
 
     def add_user(self, name: str):
         self.users.append(User(name))
+
+        self.current_user_index: int = random.choice(range(self.user_count))
+        self.current_user: User = self.users[self.current_user_index]
 
     def kill_user(self, user: User) -> User:
         for current_user in self.users:
