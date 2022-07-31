@@ -9,7 +9,25 @@ with open("./words_dictionary.json", "r", encoding="utf-8") as file:
     dictionary = json.load(file)
 
 
-while True:
+def menu():
+    print("What would you like to do?")
+
+    options = [
+        ["play", "Play"],
+        ["view_scores", "View Scores"],
+        ["quit", "Quit"],
+    ]
+
+    for index, option in enumerate(options):
+        option_number = index + 1
+
+        print(f"{option_number}. {option[1]}")
+
+    user_action_input = int(input(":: ").strip())
+    return options[user_action_input - 1][0]
+
+
+def generate_players():
 
     print("Who are playing this game?")
     print("Provide comma separated names i.e name, other name, some name.")
@@ -40,101 +58,138 @@ while True:
     user_confirmation_input: str = input(":: ").strip().lower()
 
     if user_confirmation_input == "y":
-        for user in usernames_input:
-            users.add_user(user)
-
-        break
+        return usernames_input
 
 
-while True:
-    current_user = users.current_user
+def game():
+    while True:
+        current_user = users.current_user
 
-    if users.only_one_alive:
-        print(f"Congratulations! {current_user.name} has won the game.")
-        break
-
-    last_word = words.last_word.word
-    last_letter = words.last_word.last_letter
-
-    print(
-        f"`{last_word}` was the previously used word by {words.last_word.user.name}."
-    )
-    print(f"Your word should start with `{last_letter}`.")
-
-    user_word_input = input(f"[{current_user.name}] :: ").strip().lower()
-
-    command = Command(user_word_input)
-
-    if command.is_command:
-
-        if command.action == "quit":
-            print("Thanks for playing.")
-
+        if users.only_one_alive:
+            print(f"Congratulations! {current_user.name} has won the game.")
             break
 
-        elif command.action == "revert":
-            if words.can_revert:
-                users.rotate_backward()
+        last_word = words.last_word.word
+        last_letter = words.last_word.last_letter
 
-                removed_word = words.remove_word()
+        print(
+            f"`{last_word}` was the previously used word by {words.last_word.user.name}."
+        )
+        print(f"Your word should start with `{last_letter}`.")
 
-                print(
-                    f"`{removed_word.word}` entered by {removed_word.user.name} has been removed."
-                )
+        user_word_input = input(f"[{current_user.name}] :: ").strip().lower()
+
+        command = Command(user_word_input)
+
+        if command.is_command:
+
+            if command.action == "quit":
+                print("Thanks for playing.")
+
+                break
+
+            elif command.action == "revert":
+                if words.can_revert:
+                    users.rotate_backward()
+
+                    removed_word = words.remove_word()
+
+                    print(
+                        f"`{removed_word.word}` entered by {removed_word.user.name} has been removed."
+                    )
+
+                else:
+                    print("Already at the base word.")
+
+                continue
+
+            elif command.action == "kill":
+                users.kill_user(current_user)
+
+                print(f"{current_user.name} was killed.")
+
+                continue
+
+            continue
+
+        if words.is_used(user_word_input):
+            print(f"{user_word_input} has already been used.")
+
+            continue
+
+        if not user_word_input.startswith(last_letter):
+            print(f"`{user_word_input}` doesn't start with {last_letter}.")
+
+            continue
+
+        if not user_word_input in dictionary:
+            print(f"`{user_word_input}` is not a valid word.")
+
+            continue
+
+        words.add_word(user_word_input, current_user)
+
+        users.rotate_forward()
+
+
+def view_scores():
+    for user in users.users:
+        name = user.name
+        score = user.score
+
+        print(f"{name} scored {score} points.")
+
+
+def output_results():
+    with open("./game_data.json", "w", encoding="utf-8") as game_result_file:
+        data = {
+            "users": [
+                {
+                    "name": user.name,
+                    "words": [
+                        word.word
+                        for word in user.used_words
+                    ],
+                    "score": user.score
+                }
+                for user in users.users
+            ]
+        }
+        json.dump(data, game_result_file)
+
+
+def main():
+    while True:
+        user_action = menu()
+
+        if user_action == "play":
+            if users.user_count != 0:
+                print("Do you want to use previously entered player names? Y / N")
+                user_reuse_data_confirmation = input(":: ").strip().lower()
+
+                if user_reuse_data_confirmation == "y":
+                    for user in users.users:
+                        user.is_alive = True
+                else:
+                    player_names = generate_players()
+                    for player in player_names:
+                        users.add_user(player)
 
             else:
-                print("Already at the base word.")
+                player_names = generate_players()
+                for player in player_names:
+                    users.add_user(player)
 
-            continue
+            game()
+            view_scores()
+            output_results()
 
-        elif command.action == "kill":
-            users.kill_user(current_user)
+        if user_action == "view_scores":
+            view_scores()
 
-            print(f"{current_user.name} was killed.")
-
-            continue
-
-        continue
-
-    if words.is_used(user_word_input):
-        print(f"{user_word_input} has already been used.")
-
-        continue
-
-    if not user_word_input.startswith(last_letter):
-        print(f"`{user_word_input}` doesn't start with {last_letter}.")
-
-        continue
-
-    if not user_word_input in dictionary:
-        print(f"`{user_word_input}` is not a valid word.")
-
-        continue
-
-    words.add_word(user_word_input, current_user)
-
-    users.rotate_forward()
+        if user_action == "quit":
+            break
 
 
-for user in users.users:
-    name = user.name
-    score = user.score
-
-    print(f"{name} scored {score} points.")
-
-
-with open("./game_data.json", "w", encoding="utf-8") as file:
-    data = {
-        "users": [
-            {
-                "name": user.name,
-                "words": [
-                    word.word
-                    for word in user.used_words
-                ],
-                "score": user.score
-            }
-            for user in users.users
-        ]
-    }
-    json.dump(data, file)
+if __name__ == "__main__":
+    main()
